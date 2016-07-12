@@ -66,8 +66,6 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-static bdaddr_t connected_dst;
-
 struct btd_gatt_database {
 	struct btd_adapter *adapter;
 	struct gatt_db *db;
@@ -498,45 +496,6 @@ static void connect_cb(GIOChannel *io, GError *gerr, gpointer user_data)
 	device_attach_att(device, io);
 }
 
-static void connect_cb_le(GIOChannel *io, GError *gerr, gpointer user_data)
-{
-    DBG("Called");
-	struct btd_adapter *adapter;
-	struct btd_device *device;
-    struct btd_gatt_database *database;
-	uint8_t dst_type;
-	bdaddr_t src, dst;
-
-	DBG("New incoming LE ATT connection");
-
-	if (gerr) {
-		error("%s", gerr->message);
-		return;
-	}
-
-	bt_io_get(io, &gerr, BT_IO_OPT_SOURCE_BDADDR, &src,
-						BT_IO_OPT_DEST_BDADDR, &dst,
-						BT_IO_OPT_DEST_TYPE, &dst_type,
-						BT_IO_OPT_INVALID);
-	if (gerr) {
-		error("bt_io_get: %s", gerr->message);
-		g_error_free(gerr);
-		return;
-	}
-
-	adapter = adapter_find(&src);
-	if (!adapter)
-		return;
-
-    bacpy(&connected_dst, &dst);
-    dst_type = 2;
-	device = btd_adapter_get_device(adapter, &dst, dst_type);
-	if (!device)
-		return;
-
-	device_attach_att(device, io);
-}
-
 static void gap_device_name_read_cb(struct gatt_db_attribute *attrib,
 					unsigned int id, uint16_t offset,
 					uint8_t opcode, struct bt_att *att,
@@ -945,14 +904,9 @@ static void send_notification_to_device(void *data, void *user_data)
 	if (!ccc->value[0] || (notify->indicate && !(ccc->value[0] & 0x02)))
 		return;
 
-    if (bacmp(&device_state->bdaddr, &connected_dst) == 0) {
-        device = btd_adapter_get_device(notify->database->adapter,
-						&device_state->bdaddr, 2);
-    } else {
-        device = btd_adapter_get_device(notify->database->adapter,
+	device = btd_adapter_get_device(notify->database->adapter,
 						&device_state->bdaddr,
 						device_state->bdaddr_type);
-    }
 	if (!device)
 		return;
 
@@ -2003,10 +1957,6 @@ static struct btd_device *att_get_device(struct bt_att *att)
 		return NULL;
 	}
 
-    if (bacmp(&dst, &connected_dst) == 0) {
-        dst_type = 2;
-    }
-
 	return btd_adapter_find_device(adapter, &dst, dst_type);
 }
 
@@ -2662,7 +2612,7 @@ struct btd_gatt_database *btd_gatt_database_new(struct btd_adapter *adapter)
 		goto fail;
 
 	addr = btd_adapter_get_address(adapter);
-	database->le_io = bt_io_listen(connect_cb_le, NULL, NULL, NULL, &gerr,
+	database->le_io = bt_io_listen(connect_cb, NULL, NULL, NULL, &gerr,
 					BT_IO_OPT_SOURCE_BDADDR, addr,
 					BT_IO_OPT_SOURCE_TYPE, BDADDR_LE_PUBLIC,
 					BT_IO_OPT_CID, ATT_CID,
@@ -2673,6 +2623,7 @@ struct btd_gatt_database *btd_gatt_database_new(struct btd_adapter *adapter)
 		g_error_free(gerr);
 		goto fail;
 	}
+
 	/* BR/EDR socket */
 	database->l2cap_io = bt_io_listen(connect_cb, NULL, NULL, NULL, &gerr,
 					BT_IO_OPT_SOURCE_BDADDR, addr,
