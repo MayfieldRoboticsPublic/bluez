@@ -1710,7 +1710,7 @@ static void pbap_cp(GDBusProxy *proxy, int argc, char *argv[])
 		return;
 	}
 
-	if (strcmp(argv[1], "*") == 0)
+	if (strcmp(argv[1], "*") == 0 || strcmp(argv[1], "*.vcf") == 0)
 		return pbap_pull_all(proxy, argc, argv);
 
 	return pbap_pull(proxy, argc, argv);
@@ -2081,7 +2081,8 @@ static void rl_handler(char *input)
 	if (!strlen(input))
 		goto done;
 
-	add_history(input);
+	if (history_search(input, -1))
+		add_history(input);
 
 	if (wordexp(input, &w, WRDE_NOCMD))
 		goto done;

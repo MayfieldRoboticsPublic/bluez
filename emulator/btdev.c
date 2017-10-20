@@ -600,7 +600,7 @@ struct btdev *btdev_create(enum btdev_type type, uint16_t id)
 
 	switch (btdev->type) {
 	case BTDEV_TYPE_BREDRLE:
-		btdev->version = 0x08;
+		btdev->version = 0x09;
 		set_bredrle_features(btdev);
 		set_bredrle_commands(btdev);
 		break;
@@ -610,7 +610,7 @@ struct btdev *btdev_create(enum btdev_type type, uint16_t id)
 		set_bredr_commands(btdev);
 		break;
 	case BTDEV_TYPE_LE:
-		btdev->version = 0x08;
+		btdev->version = 0x09;
 		set_le_features(btdev);
 		set_le_commands(btdev);
 		break;
@@ -3098,6 +3098,7 @@ static void default_cmd(struct btdev *btdev, uint16_t opcode,
 		}
 		cmd_status(btdev, BT_HCI_ERR_SUCCESS,
 						BT_HCI_CMD_LE_GENERATE_DHKEY);
+		dh_evt.status = BT_HCI_ERR_SUCCESS;
 		le_meta_event(btdev, BT_HCI_EVT_LE_GENERATE_DHKEY_COMPLETE,
 						&dh_evt, sizeof(dh_evt));
 		break;

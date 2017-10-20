@@ -354,9 +354,7 @@ static gboolean bnep_setup(GIOChannel *chan,
 	case 16:
 		if (memcmp(&req->service[4], bt_base, sizeof(bt_base)) != 0)
 			break;
-
-		/* Intentional no-brake */
-
+		/* fall through */
 	case 4:
 		val = get_be32(req->service);
 		if (val > 0xffff)
@@ -430,7 +428,6 @@ reject:
 static void confirm_event(GIOChannel *chan, gpointer user_data)
 {
 	struct network_adapter *na = user_data;
-	struct network_server *ns;
 	bdaddr_t src, dst;
 	char address[18];
 	GError *err = NULL;
@@ -454,8 +451,7 @@ static void confirm_event(GIOChannel *chan, gpointer user_data)
 		goto drop;
 	}
 
-	ns = find_server(na->servers, BNEP_SVC_NAP);
-	if (!ns || !ns->record_id || !ns->bridge)
+	if (!na->servers)
 		goto drop;
 
 	na->setup = g_new0(struct network_session, 1);

@@ -306,6 +306,8 @@ static gboolean service_callback(GIOChannel *io, GIOCondition cond,
 	if (bt_string2uuid(&uuid, session->service) < 0)
 		goto failed;
 
+	sdp_uuid128_to_uuid(&uuid);
+
 	search = sdp_list_append(NULL, &uuid);
 	attrid = sdp_list_append(NULL, &range);
 
@@ -443,8 +445,8 @@ static int bluetooth_getpacketopt(GIOChannel *io, int *tx_mtu, int *rx_mtu)
 {
 	int sk = g_io_channel_unix_get_fd(io);
 	int type;
-	int omtu = -1;
-	int imtu = -1;
+	uint16_t omtu = BT_TX_MTU;
+	uint16_t imtu = BT_RX_MTU;
 	socklen_t len = sizeof(int);
 
 	DBG("");

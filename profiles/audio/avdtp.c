@@ -86,6 +86,7 @@ static unsigned int seids;
 #define AVDTP_MSG_TYPE_REJECT			0x03
 
 #define REQ_TIMEOUT 6
+#define SUSPEND_TIMEOUT 10
 #define ABORT_TIMEOUT 2
 #define DISCONNECT_TIMEOUT 1
 #define START_TIMEOUT 1
@@ -1397,6 +1398,7 @@ static void setconf_cb(struct avdtp *session, struct avdtp_stream *stream,
 		avdtp_send(session, session->in.transaction,
 				AVDTP_MSG_TYPE_REJECT, AVDTP_SET_CONFIGURATION,
 				&rej, sizeof(rej));
+		stream_free(stream);
 		return;
 	}
 
@@ -2441,10 +2443,9 @@ static int cancel_request(struct avdtp *session, int err)
 	else
 		stream = NULL;
 
-	if (stream) {
-		stream->abort_int = TRUE;
+	if (stream)
 		lsep = stream->lsep;
-	} else
+	else
 		lsep = NULL;
 
 	switch (req->signal_id) {
@@ -2489,7 +2490,7 @@ static int cancel_request(struct avdtp *session, int err)
 		if (lsep && lsep->cfm && lsep->cfm->set_configuration)
 			lsep->cfm->set_configuration(session, lsep, stream,
 							&averr, lsep->user_data);
-		goto failed;
+		break;
 	case AVDTP_DISCOVER:
 		error("Discover: %s (%d)", strerror(err), err);
 		goto failed;
@@ -2514,6 +2515,8 @@ static int cancel_request(struct avdtp *session, int err)
 		goto failed;
 	}
 
+	stream->abort_int = TRUE;
+
 	goto done;
 
 failed:
@@ -2536,7 +2539,7 @@ static int send_req(struct avdtp *session, gboolean priority,
 			struct pending_req *req)
 {
 	static int transaction = 0;
-	int err;
+	int err, timeout;
 
 	if (session->state == AVDTP_SESSION_STATE_DISCONNECTED) {
 		session->io = l2cap_connect(session);
@@ -2566,10 +2569,18 @@ static int send_req(struct avdtp *session, gboolean priority,
 
 	session->req = req;
 
-	req->timeout = g_timeout_add_seconds(req->signal_id == AVDTP_ABORT ?
-					ABORT_TIMEOUT : REQ_TIMEOUT,
-					request_timeout,
-					session);
+	switch (req->signal_id) {
+	case AVDTP_ABORT:
+		timeout = ABORT_TIMEOUT;
+		break;
+	case AVDTP_SUSPEND:
+		timeout = SUSPEND_TIMEOUT;
+		break;
+	default:
+		timeout = REQ_TIMEOUT;
+	}
+
+	req->timeout = g_timeout_add_seconds(timeout, request_timeout, session);
 	return 0;
 
 failed:
@@ -2825,6 +2836,7 @@ static gboolean avdtp_parse_resp(struct avdtp *session,
 		return avdtp_discover_resp(session, buf, size);
 	case AVDTP_GET_ALL_CAPABILITIES:
 		get_all = "ALL_";
+		/* fall through */
 	case AVDTP_GET_CAPABILITIES:
 		DBG("GET_%sCAPABILITIES request succeeded", get_all);
 		if (!avdtp_get_capabilities_resp(session, buf, size))

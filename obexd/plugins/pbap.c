@@ -369,6 +369,7 @@ static int generate_response(void *user_data)
 		/* Ignore all other parameter and return PhoneBookSize */
 		uint16_t size = g_slist_length(pbap->cache.entries);
 
+		pbap->obj->firstpacket = TRUE;
 		pbap->obj->apparam = g_obex_apparam_set_uint16(
 							pbap->obj->apparam,
 							PHONEBOOKSIZE_TAG,
@@ -543,13 +544,18 @@ static int pbap_get(struct obex_session *os, void *user_data)
 
 	} else if (g_ascii_strcasecmp(type, VCARDLISTING_TYPE) == 0) {
 		/* Always relative */
-		if (!name || strlen(name) == 0)
+		if (!name || strlen(name) == 0) {
 			/* Current folder */
 			path = g_strdup(pbap->folder);
-		else
+		} else {
 			/* Current folder + relative path */
 			path = g_build_filename(pbap->folder, name, NULL);
 
+			/* clear cache */
+			pbap->cache.valid = FALSE;
+			pbap->cache.index = 0;
+			cache_clear(&pbap->cache);
+		}
 	} else if (g_ascii_strcasecmp(type, VCARDENTRY_TYPE) == 0) {
 		/* File name only */
 		path = g_strdup(name);
@@ -887,8 +893,10 @@ static ssize_t vobject_list_get_next_header(void *object, void *buf, size_t mtu,
 
 	*hi = G_OBEX_HDR_APPARAM;
 
-	if (pbap->params->maxlistcount == 0)
+	if (obj->firstpacket) {
+		obj->firstpacket = FALSE;
 		return g_obex_apparam_encode(obj->apparam, buf, mtu);
+	}
 
 	return 0;
 }

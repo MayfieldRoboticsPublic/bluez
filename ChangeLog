@@ -1,3 +1,80 @@
+ver 5.47:
+	Fix issue with handling AcquireNotify registration.
+	Fix issue with handling support for reconnection interval.
+	Fix issue with handling A2DP transport and accepting streams.
+	Fix issue with fallback from BR/EDR to LE bearer handling.
+	Add support for appearance and local name advertising data.
+	Add support for retrieving the supported discovery filters.
+	Add support for decoding Bluetooth 5.0 commands and events.
+	Add support for decoding Bluetooth Mesh advertising bearer.
+	Add support for Bluetooth Mesh control application.
+
+ver 5.46:
+	Fix issue with handling ATT over BR/EDR connections.
+	Fix issue with SDP browsing cleanup after connection.
+	Fix issue with pointer dereference and OPP Put request.
+	Fix issue with identity address updates during pairing.
+	Fix issue with not removing services that had disappeared.
+	Add support for improved discovery of included services.
+	Add support for simplified characteristics discovery.
+	Add support for GATT caching configuration option.
+	Add experimental support for AcquireWrite and AcquireNotify.
+
+ver 5.45:
+	Fix issue with agent support in Bluetooth client tool.
+	Fix issue with handling re-connection policy.
+	Fix issue with handling unknown ATT commands.
+	Fix issue with handling GATT Service Includes property.
+	Fix issue with handling PullAll for OBEX transfers.
+	Fix issue with handling delay in AVDTP Suspend responses.
+	Fix issue with handling decoding of management frames.
+	Add support for frame counters in Bluetooth monitor tool.
+
+ver 5.44:
+	Fix issue with GAP and GATT service registration.
+	Fix issue with wrong address type for ATT sockets.
+	Fix issue with dictionary entries for advertising.
+	Fix issue with device information and HID over GATT.
+	Fix issue with handling secondary service discovery.
+	Fix issue with handling Attribute Read Long procedure.
+	Fix issue with handling Attribute Write Long procedure.
+	Fix issue with handling abort of AVDTP SetConfiguration.
+	Add support for single-mode static address configuration.
+	Add support for MIDI over Bluetooth Low Energy.
+
+ver 5.43:
+	Fix issue with HID over GATT support.
+	Fix issue with ATT Find By Type response handling.
+	Fix issue with handling insufficient authentication.
+	Fix issue with bonding while pairing is in progress.
+	Fix issue with BR/EDR pairing for dual-mode devices.
+	Fix issue with handling profile policy resets.
+	Fix issue with connecting state of services.
+	Fix issue with handling PAN GN Master role.
+	Add support for enabling LE Privacy feature.
+
+ver 5.42:
+	Fix issue with PBAP call logs from different folders.
+	Fix issue with OBEX over L2CAP and PowerPC architecture.
+	Fix issue with BR/EDR over LE selection during discovery.
+	Fix issue with selection of bearer after bonding.
+	Fix issue with handling socket recv() return values.
+	Fix issue with setting connecting service state.
+	Fix issue with setting correct ATT default MTU value.
+	Fix issue with not setting AVRCP player identifier.
+	Fix issue with handling AVRCP browsable player.
+	Fix issue with addressing AVRCP player changes.
+	Add support for new management tracing capability.
+	Mark GATT D-Bus APIs as stable interfaces.
+
+ver 5.41:
+	Fix issue with service state changes handling.
+	Fix issue with AVRCP and no available player.
+	Fix issue with handling discovery filters.
+	Fix issue with handling temporary addresses.
+	Fix issue with GATT MTU size and BR/EDR links.
+	Fix issue with OBEX and creating directories.
+
 ver 5.40:
 	Fix issue with not storing GATT attributes.
 	Fix issue with optional GATT notifications.

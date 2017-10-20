@@ -57,6 +57,7 @@
 
 static struct btsnoop *btsnoop_file = NULL;
 static bool hcidump_fallback = false;
+static bool decode_control = true;
 
 struct control_data {
 	uint16_t channel;
@@ -797,6 +798,9 @@ static void mgmt_advertising_removed(uint16_t len, const void *buf)
 
 void control_message(uint16_t opcode, const void *data, uint16_t size)
 {
+	if (!decode_control)
+		return;
+
 	switch (opcode) {
 	case MGMT_EV_INDEX_ADDED:
 		mgmt_index_added(size, data);
@@ -1126,10 +1130,17 @@ static int server_fd = -1;
 void control_server(const char *path)
 {
 	struct sockaddr_un addr;
+	size_t len;
 	int fd;
 
 	if (server_fd >= 0)
 		return;
+
+	len = strlen(path);
+	if (len > sizeof(addr.sun_path) - 1) {
+		fprintf(stderr, "Socket name too long\n");
+		return;
+	}
 
 	unlink(path);
 
@@ -1141,7 +1152,7 @@ void control_server(const char *path)
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
-	strcpy(addr.sun_path, path);
+	strncpy(addr.sun_path, path, len);
 
 	if (bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		perror("Failed to bind server socket");
@@ -1449,4 +1460,9 @@ int control_tracing(void)
 	open_channel(HCI_CHANNEL_CONTROL);
 
 	return 0;
+}
+
+void control_disable_decoding(void)
+{
+	decode_control = false;
 }

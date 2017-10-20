@@ -27,7 +27,7 @@ using GattManager1 registration method and must implement the methods and
 properties defined in GattService1 interface.
 
 Service		org.bluez
-Interface	org.bluez.GattService1 [Experimental]
+Interface	org.bluez.GattService1
 Object path	[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX/serviceXX
 
 Properties	string UUID [read-only]
@@ -58,7 +58,7 @@ For local GATT defined services, the object paths need to follow the service
 path hierarchy and are freely definable.
 
 Service		org.bluez
-Interface	org.bluez.GattCharacteristic1 [Experimental]
+Interface	org.bluez.GattCharacteristic1
 Object path	[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX/serviceXX/charYYYY
 
 Methods		array{byte} ReadValue(dict options)
@@ -91,12 +91,77 @@ Methods		array{byte} ReadValue(dict options)
 					 org.bluez.Error.NotAuthorized
 					 org.bluez.Error.NotSupported
 
+		fd, uint16 AcquireWrite(dict options) [experimental, optional]
+
+			Acquire file descriptor and MTU for writing. Usage of
+			WriteValue will be locked causing it to return
+			NotPermitted error.
+
+			For server the MTU returned shall be equal or smaller
+			than the negotiated MTU.
+
+			For client it only works with characteristic that has
+			WriteAcquired property which relies on
+			write-without-response Flag.
+
+			To release the lock the client shall close the file
+			descriptor, a HUP is generated in case the device
+			is disconnected.
+
+			Note: the MTU can only be negotiated once and is
+			symmetric therefore this method may be delayed in
+			order to have the exchange MTU completed, because of
+			that the file descriptor is closed during
+			reconnections as the MTU has to be renegotiated.
+
+			Possible options: "device": Object Device (Server only)
+					  "MTU": Exchanged MTU (Server only)
+
+			Possible Errors: org.bluez.Error.Failed
+					 org.bluez.Error.NotSupported
+
+		fd, uint16 AcquireNotify(dict options) [experimental, optional]
+
+			Acquire file descriptor and MTU for notify. Usage of
+			StartNotify will be locked causing it to return
+			NotPermitted error.
+
+			For server the MTU returned shall be equal or smaller
+			than the negotiated MTU.
+
+			Only works with characteristic that has NotifyAcquired
+			which relies on notify Flag and no other client have
+			called StartNotify.
+
+			Notification are enabled during this procedure so
+			StartNotify shall not be called, any notification
+			will be dispatched via file descriptor therefore the
+			Value property is not affected during the time where
+			notify has been acquired.
+
+			To release the lock the client shall close the file
+			descriptor, a HUP is generated in case the device
+			is disconnected.
+
+			Note: the MTU can only be negotiated once and is
+			symmetric therefore this method may be delayed in
+			order to have the exchange MTU completed, because of
+			that the file descriptor is closed during
+			reconnections as the MTU has to be renegotiated.
+
+			Possible options: "device": Object Device (Server only)
+					  "MTU": Exchanged MTU (Server only)
+
+			Possible Errors: org.bluez.Error.Failed
+					 org.bluez.Error.NotSupported
+
 		void StartNotify()
 
 			Starts a notification session from this characteristic
 			if it supports value notifications or indications.
 
 			Possible Errors: org.bluez.Error.Failed
+					 org.bluez.Error.NotPermitted
 					 org.bluez.Error.InProgress
 					 org.bluez.Error.NotSupported
 
@@ -109,13 +174,20 @@ Methods		array{byte} ReadValue(dict options)
 
 			Possible Errors: org.bluez.Error.Failed
 
+		void Confirm() [optional] (Server only)
+
+			This method doesn't expect a reply so it is just a
+			confirmation that value was received.
+
+			Possible Errors: org.bluez.Error.Failed
+
 Properties	string UUID [read-only]
 
 			128-bit characteristic UUID.
 
 		object Service [read-only]
 
-			Object path of the GATT service the characteristc
+			Object path of the GATT service the characteristic
 			belongs to.
 
 		array{byte} Value [read-only, optional]
@@ -124,6 +196,28 @@ Properties	string UUID [read-only]
 			gets updated only after a successful read request and
 			when a notification or indication is received, upon
 			which a PropertiesChanged signal will be emitted.
+
+		boolean WriteAcquired [read-only, optional]
+
+			True, if this characteristic has been acquired by any
+			client using AcquireWrite.
+
+			For client properties is ommited in case
+			'write-without-response' flag is not set.
+
+			For server the presence of this property indicates
+			that AcquireWrite is supported.
+
+		boolean NotifyAcquired [read-only, optional]
+
+			True, if this characteristic has been acquired by any
+			client using AcquireNotify.
+
+			For client this properties is ommited in case 'notify'
+			flag is not set.
+
+			For server the presence of this property indicates
+			that AcquireNotify is supported.
 
 		boolean Notifying [read-only, optional]
 
@@ -159,7 +253,7 @@ Characteristic Descriptors hierarchy
 Local or remote GATT characteristic descriptors hierarchy.
 
 Service		org.bluez
-Interface	org.bluez.GattDescriptor1 [Experimental]
+Interface	org.bluez.GattDescriptor1
 Object path	[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX/serviceXX/charYYYY/descriptorZZZ
 
 Methods		array{byte} ReadValue(dict flags)
@@ -198,7 +292,7 @@ Properties	string UUID [read-only]
 
 		object Characteristic [read-only]
 
-			Object path of the GATT characteristc the descriptor
+			Object path of the GATT characteristic the descriptor
 			belongs to.
 
 		array{byte} Value [read-only, optional]
@@ -222,7 +316,7 @@ Properties	string UUID [read-only]
 				"secure-read" (Server Only)
 				"secure-write" (Server Only)
 
-GATT Profile hierarcy
+GATT Profile hierarchy
 =====================
 
 Local profile (GATT client) instance. By registering this type of object
@@ -231,7 +325,7 @@ and requests automatic connections to be established to devices
 supporting it.
 
 Service		<application dependent>
-Interface	org.bluez.GattProfile1 [Experimental]
+Interface	org.bluez.GattProfile1
 Object path	<application dependent>
 
 Methods		void Release()
@@ -307,8 +401,17 @@ unregister the service. Similarly, if the application disconnects from the bus,
 all of its registered services will be automatically unregistered.
 InterfacesAdded signals will be ignored.
 
+Examples:
+	- Client
+		test/example-gatt-client
+		client/bluetoothctl
+	- Server
+		test/example-gatt-server
+		tools/gatt-service
+
+
 Service		org.bluez
-Interface	org.bluez.GattManager1 [Experimental]
+Interface	org.bluez.GattManager1
 Object path	[variable prefix]/{hci0,hci1,...}
 
 Methods		void RegisterApplication(object application, dict options)

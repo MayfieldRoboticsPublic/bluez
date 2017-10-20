@@ -61,6 +61,7 @@ tools/rctest
 tools/scotest
 tools/amptest
 tools/oobtest
+tools/advtest
 tools/sdptool
 tools/avtest
 tools/bdaddr
@@ -112,6 +113,7 @@ tools/rfcomm-tester
 tools/bnep-tester
 tools/userchan-tester
 tools/btattach
+tools/btconfig
 tools/btmgmt
 tools/btsnoop
 peripheral/btsensor
@@ -120,6 +122,7 @@ emulator/btvirt
 emulator/b1ee
 emulator/hfp
 client/bluetoothctl
+mesh/meshctl
 
 src/bluetoothd.8
 src/bluetooth.service
@@ -138,6 +141,7 @@ unit/test-avdtp
 unit/test-avctp
 unit/test-avrcp
 unit/test-gatt
+unit/test-midi
 unit/test-gattrib
 unit/test-*.log
 unit/test-*.trs

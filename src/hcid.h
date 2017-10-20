@@ -29,12 +29,19 @@ typedef enum {
 	BT_MODE_LE,
 } bt_mode_t;
 
+typedef enum {
+	BT_GATT_CACHE_ALWAYS,
+	BT_GATT_CACHE_YES,
+	BT_GATT_CACHE_NO,
+} bt_gatt_cache_t;
+
 struct main_opts {
 	char		*name;
 	uint32_t	class;
-	uint16_t	autoto;
 	uint32_t	pairto;
 	uint32_t	discovto;
+	uint8_t		privacy;
+
 	gboolean	reverse_sdp;
 	gboolean	name_resolv;
 	gboolean	debug_keys;
@@ -46,6 +53,7 @@ struct main_opts {
 	uint16_t	did_version;
 
 	bt_mode_t	mode;
+	bt_gatt_cache_t gatt_cache;
 };
 
 extern struct main_opts main_opts;

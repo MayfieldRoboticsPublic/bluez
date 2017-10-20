@@ -567,7 +567,7 @@ char *csr_buildidtostr(uint16_t id)
 		if (csr_map[i].id == id)
 			return csr_map[i].str;
 
-	snprintf(str, 11, "Build %d", id);
+	snprintf(str, sizeof(str), "Build %d", id);
 	return str;
 }
 
@@ -2756,7 +2756,7 @@ static int parse_line(char *str)
 
 	off++;
 
-	while (1) {
+	while (length <= sizeof(array) - 2) {
 		value = strtol(off, &end, 16);
 		if (value == 0 && off == end)
 			break;
